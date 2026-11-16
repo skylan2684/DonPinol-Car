@@ -47,11 +47,12 @@ class MapDecorView @JvmOverloads constructor(
         c.drawLine(w * .12f, -10f, w * .18f, h + 10, street)
         c.drawLine(w * .88f, -10f, w * .91f, h + 10, street)
         path.reset()
-        path.moveTo(w * .32f, h + 10); path.lineTo(w * .34f, h * .6f)
-        path.lineTo(w * .69f, h * .57f); path.lineTo(w * .71f, h * .28f)
+        // Ruta y destino en la franja superior, que no tapan los botones
+        path.moveTo(-10f, h * .40f); path.lineTo(w * .52f, h * .40f)
+        path.lineTo(w * .51f, h * .24f); path.lineTo(w * .82f, h * .22f)
         c.drawPath(path, route)
-        c.drawCircle(w * .71f, h * .27f, 9 * d, dot)
-        c.drawCircle(w * .71f, h * .27f, 17 * d, ring)
+        c.drawCircle(w * .84f, h * .22f, 7 * d, dot)
+        c.drawCircle(w * .84f, h * .22f, 13 * d, ring)
         c.restore()
     }
 }

@@ -47,7 +47,6 @@ class MainActivity : Activity(), LocationListener {
 
     // Vistas
     private lateinit var gauge: GaugeView
-    private lateinit var speed: TextView
     private lateinit var heading: TextView
     private lateinit var trip: TextView
     private lateinit var date: TextView
@@ -77,7 +76,6 @@ class MainActivity : Activity(), LocationListener {
         tripMeters = prefs.getFloat("trip_m", 0f).toDouble()
 
         gauge = findViewById(R.id.gauge)
-        speed = findViewById(R.id.speed)
         heading = findViewById(R.id.heading)
         trip = findViewById(R.id.trip)
         date = findViewById(R.id.date)
@@ -251,7 +249,7 @@ class MainActivity : Activity(), LocationListener {
             if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000L, 0f, this)
             } else {
-                speed.text = "--"; heading.text = "GPS off"
+                gauge.noSignal = true; heading.text = "GPS off"
             }
         } catch (_: SecurityException) {}
     }
@@ -269,7 +267,7 @@ class MainActivity : Activity(), LocationListener {
     override fun onLocationChanged(loc: Location) {
         val kmh = if (loc.hasSpeed()) loc.speed * 3.6f else 0f
         val shownKmh = if (kmh < 2f) 0f else kmh   // evita que "baile" estando parado
-        speed.text = shownKmh.toInt().toString()
+        gauge.noSignal = false
         gauge.setSpeed(shownKmh)
 
         if (loc.hasBearing() && shownKmh > 3f) {
@@ -288,7 +286,7 @@ class MainActivity : Activity(), LocationListener {
     @Deprecated("Requerido en Android 9 y anteriores")
     override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
     override fun onProviderEnabled(provider: String) { startGps() }
-    override fun onProviderDisabled(provider: String) { speed.text = "--"; heading.text = "GPS off" }
+    override fun onProviderDisabled(provider: String) { gauge.noSignal = true; heading.text = "GPS off" }
 
     private fun showTrip() {
         trip.text = String.format(Locale.US, "%.1f km", tripMeters / 1000.0)

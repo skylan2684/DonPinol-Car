@@ -97,34 +97,6 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent" />
 
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:gravity="center_horizontal"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/speed"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-medium"
-                        android:shadowColor="#8C00AAFF"
-                        android:shadowRadius="24"
-                        android:text="--"
-                        android:textColor="@color/text"
-                        android:textSize="72sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/speedUnit"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:letterSpacing="0.25"
-                        android:text="KM/H"
-                        android:textColor="@color/text_dim"
-                        android:textSize="14sp" />
-                </LinearLayout>
             </FrameLayout>
 
             <LinearLayout
@@ -139,7 +111,10 @@
                     android:layout_weight="1"
                     android:background="@drawable/bg_mini"
                     android:orientation="vertical"
-                    android:padding="10dp">
+                    android:paddingStart="10dp"
+                    android:paddingTop="6dp"
+                    android:paddingEnd="10dp"
+                    android:paddingBottom="6dp">
 
                     <TextView
                         style="@style/Label"
@@ -154,7 +129,7 @@
                         android:layout_marginTop="2dp"
                         android:text="--"
                         android:textColor="@color/text"
-                        android:textSize="20sp"
+                        android:textSize="18sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -168,7 +143,10 @@
                     android:clickable="true"
                     android:focusable="true"
                     android:orientation="vertical"
-                    android:padding="10dp">
+                    android:paddingStart="10dp"
+                    android:paddingTop="6dp"
+                    android:paddingEnd="10dp"
+                    android:paddingBottom="6dp">
 
                     <TextView
                         style="@style/Label"
@@ -183,7 +161,7 @@
                         android:layout_marginTop="2dp"
                         android:text="0.0 km"
                         android:textColor="@color/text"
-                        android:textSize="20sp"
+                        android:textSize="18sp"
                         android:textStyle="bold" />
                 </LinearLayout>
             </LinearLayout>

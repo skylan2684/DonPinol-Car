@@ -43,7 +43,19 @@ class GaugeView @JvmOverloads constructor(
         color = Color.parseColor("#8FA0BA"); textSize = 11 * d
         textAlign = Paint.Align.CENTER
     }
+    private val numPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#EAF0FA"); textAlign = Paint.Align.CENTER
+        typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
+        setShadowLayer(14 * d, 0f, 0f, Color.parseColor("#8C00AAFF"))
+    }
+    private val unitPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#8FA0BA"); textAlign = Paint.Align.CENTER; letterSpacing = 0.25f
+    }
     private val rect = RectF()
+
+    /** true cuando no hay señal GPS: muestra "--". */
+    var noSignal = true
+        set(v) { field = v; invalidate() }
 
     init {
         setLayerType(LAYER_TYPE_SOFTWARE, null) // necesario para BlurMaskFilter
@@ -61,10 +73,13 @@ class GaugeView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         val size = min(width, height).toFloat()
-        val pad = 18 * d
+        val pad = 10 * d
         val r = size / 2f - pad
         val cx = width / 2f
-        val cy = height / 2f + size * 0.04f
+        val cy = height / 2f + size * 0.05f
+        track.strokeWidth = r * 0.10f
+        glow.strokeWidth = r * 0.12f
+        arc.strokeWidth = r * 0.075f
         rect.set(cx - r, cy - r, cx + r, cy + r)
 
         canvas.drawArc(rect, startAngle, sweepTotal, false, track)
@@ -73,15 +88,24 @@ class GaugeView @JvmOverloads constructor(
             canvas.drawArc(rect, startAngle, sweep, false, glow)
             canvas.drawArc(rect, startAngle, sweep, false, arc)
         }
-        // Marcas de escala dentro del arco
-        val lr = r - 26 * d
-        var v = 0
-        while (v <= maxValue.toInt()) {
-            val ang = Math.toRadians((startAngle + sweepTotal * v / maxValue).toDouble())
-            val x = cx + lr * cos(ang).toFloat()
-            val y = cy + lr * sin(ang).toFloat() + labels.textSize / 3f
-            canvas.drawText(v.toString(), x, y, labels)
-            v += 40
+        // Marcas de escala: solo si hay espacio suficiente
+        if (r > 90 * d) {
+            val lr = r - r * 0.24f
+            labels.textSize = r * 0.09f
+            var v = 0
+            while (v <= maxValue.toInt()) {
+                val ang = Math.toRadians((startAngle + sweepTotal * v / maxValue).toDouble())
+                val x = cx + lr * cos(ang).toFloat()
+                val y = cy + lr * sin(ang).toFloat() + labels.textSize / 3f
+                canvas.drawText(v.toString(), x, y, labels)
+                v += 40
+            }
         }
+        // Número de velocidad y unidad, escalados al tamaño del velocímetro
+        numPaint.textSize = r * 0.62f
+        unitPaint.textSize = r * 0.14f
+        val txt = if (noSignal) "--" else Math.round(shown).toString()
+        canvas.drawText(txt, cx, cy + numPaint.textSize * 0.30f, numPaint)
+        canvas.drawText("KM/H", cx, cy + numPaint.textSize * 0.30f + unitPaint.textSize * 1.6f, unitPaint)
     }
 }
