@@ -19,14 +19,17 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
-
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
 
       - name: Compilar APK
-        run: gradle :app:assembleDebug --no-daemon --stacktrace
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          gradle :app:assembleDebug --no-daemon --stacktrace
 
       - name: Preparar APK
         run: |
