@@ -15,6 +15,22 @@ android {
         versionName = "1.0." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
+    flavorDimensions += "destino"
+    productFlavors {
+        create("radio") {
+            dimension = "destino"
+            buildConfigField("boolean", "MUSIC_ACCESS", "true")
+        }
+        create("telefono") {
+            dimension = "destino"
+            buildConfigField("boolean", "MUSIC_ACCESS", "false")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false

@@ -149,7 +149,7 @@ class MainActivity : Activity(), LocationListener {
 
         findViewById<View>(R.id.dockMusic).setOnClickListener { openMusicApp() }
         findViewById<View>(R.id.musicCard).setOnClickListener {
-            if (!hasMediaAccess()) askMediaAccess() else openMusicApp()
+            if (BuildConfig.MUSIC_ACCESS && !hasMediaAccess()) askMediaAccess() else openMusicApp()
         }
         findViewById<View>(R.id.dockRadio).setOnClickListener {
             val app = AppLauncher.findByLabel(this, "radio", "fm")
@@ -178,7 +178,11 @@ class MainActivity : Activity(), LocationListener {
     }
 
     private fun noMusic() {
-        if (!hasMediaAccess()) askMediaAccess() else AppLauncher.toast(this, "No hay música sonando")
+        when {
+            !BuildConfig.MUSIC_ACCESS -> openMusicApp()
+            !hasMediaAccess() -> askMediaAccess()
+            else -> AppLauncher.toast(this, "No hay música sonando")
+        }
     }
 
     private fun setupPlace(id: Int, key: String, name: String) {
@@ -298,6 +302,7 @@ class MainActivity : Activity(), LocationListener {
     // ---------------------------------------------------------------- Música
 
     private fun hasMediaAccess(): Boolean {
+        if (!BuildConfig.MUSIC_ACCESS) return false
         val flat = Settings.Secure.getString(contentResolver, "enabled_notification_listeners") ?: return false
         return flat.contains(listenerComponent.flattenToString()) || flat.contains(packageName)
     }
@@ -318,6 +323,11 @@ class MainActivity : Activity(), LocationListener {
     }
 
     private fun startMedia() {
+        if (!BuildConfig.MUSIC_ACCESS) {
+            title.text = "Tu música"
+            artist.text = "Toca para abrir el reproductor"
+            return
+        }
         if (!hasMediaAccess()) {
             title.text = "Música"
             artist.text = "Toca para activar el control"

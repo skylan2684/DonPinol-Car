@@ -29,13 +29,14 @@ jobs:
           ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
         run: |
           echo "sdk.dir=$ANDROID_HOME" > local.properties
-          gradle :app:assembleDebug --no-daemon --stacktrace
+          gradle :app:assembleRadioDebug :app:assembleTelefonoDebug --no-daemon --stacktrace
 
       - name: Preparar APK
         run: |
           mkdir -p out
-          cp app/build/outputs/apk/debug/app-debug.apk out/DonPinolCar.apk
-          sha256sum out/DonPinolCar.apk | tee out/DonPinolCar.apk.sha256
+          cp app/build/outputs/apk/radio/debug/app-radio-debug.apk out/DonPinolCar.apk
+          cp app/build/outputs/apk/telefono/debug/app-telefono-debug.apk out/DonPinolCar-telefono.apk
+          cd out && sha256sum DonPinolCar.apk DonPinolCar-telefono.apk | tee SHA256SUMS.txt
 
       - uses: actions/upload-artifact@v4
         with:
@@ -49,7 +50,9 @@ jobs:
           name: DonPinol Car v1.0.${{ github.run_number }}
           body: |
             APK compilado automáticamente desde el commit ${{ github.sha }}.
-            Descarga **DonPinolCar.apk**, pásalo a la radio e instálalo.
+            - **DonPinolCar.apk**: versión completa para la radio (con música).
+            - **DonPinolCar-telefono.apk**: para probar en el teléfono; no pide acceso a notificaciones, así Play Protect no la bloquea.
           files: |
             out/DonPinolCar.apk
-            out/DonPinolCar.apk.sha256
+            out/DonPinolCar-telefono.apk
+            out/SHA256SUMS.txt
