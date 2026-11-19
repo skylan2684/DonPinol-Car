@@ -1,0 +1,34 @@
+name: RepoFactory - crear repositorio privado
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: repo-factory-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  crear:
+    if: >-
+      github.repository == 'skylan2684/DonPinol-Car' &&
+      github.actor == 'skylan2684' &&
+      github.event.issue.user.login == 'skylan2684' &&
+      github.event.issue.pull_request == null &&
+      startsWith(github.event.issue.title, '[RepoFactory] ')
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Usar solo archivos confiables de main
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validar autorización y crear repositorio privado vacío
+        env:
+          REPO_FACTORY_PAT: ${{ secrets.REPO_FACTORY_PAT }}
+          ISSUE_COMMENT_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/repo_factory.py
