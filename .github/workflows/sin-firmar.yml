@@ -26,6 +26,14 @@ jobs:
         with:
           gradle-version: '8.7'
 
+      - name: Pruebas automáticas
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          gradle :app:testRadioDebugUnitTest --no-daemon --stacktrace
+
       - name: Compilar APK de la radio sin firmar
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk

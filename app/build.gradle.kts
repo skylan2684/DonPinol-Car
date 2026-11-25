@@ -49,3 +49,8 @@ android {
         jvmTarget = "17"
     }
 }
+
+dependencies {
+    // Solo para las pruebas automáticas; no va dentro de la APK.
+    testImplementation("junit:junit:4.13.2")
+}

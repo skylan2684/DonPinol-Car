@@ -265,22 +265,20 @@ class MainActivity : Activity(), LocationListener {
     }
 
     override fun onLocationChanged(loc: Location) {
-        val kmh = if (loc.hasSpeed()) loc.speed * 3.6f else 0f
-        val shownKmh = if (kmh < 2f) 0f else kmh   // evita que "baile" estando parado
+        val shownKmh = CarLogic.displayKmh(loc.speed, loc.hasSpeed())
         gauge.noSignal = false
         gauge.setSpeed(shownKmh)
 
-        if (loc.hasBearing() && shownKmh > 3f) {
-            val b = loc.bearing.toInt()
-            heading.text = "${compass(loc.bearing)} $b°"
+        if (loc.hasBearing() && shownKmh > CarLogic.MOVING_KMH) {
+            heading.text = CarLogic.headingText(loc.bearing)
         }
 
         val prev = lastLoc
-        if (prev != null && loc.accuracy < 30f && shownKmh > 3f) {
+        if (prev != null) {
             val dist = prev.distanceTo(loc)
-            if (dist < 200f) { tripMeters += dist; showTrip() }
+            if (CarLogic.countsForTrip(loc.accuracy, shownKmh, dist)) { tripMeters += dist; showTrip() }
         }
-        if (loc.accuracy < 30f) lastLoc = loc
+        if (loc.accuracy < CarLogic.MAX_ACCURACY_M) lastLoc = loc
     }
 
     @Deprecated("Requerido en Android 9 y anteriores")
@@ -289,12 +287,7 @@ class MainActivity : Activity(), LocationListener {
     override fun onProviderDisabled(provider: String) { gauge.noSignal = true; heading.text = "GPS off" }
 
     private fun showTrip() {
-        trip.text = String.format(Locale.US, "%.1f km", tripMeters / 1000.0)
-    }
-
-    private fun compass(b: Float): String {
-        val dirs = arrayOf("N", "NE", "E", "SE", "S", "SO", "O", "NO")
-        return dirs[(((b % 360) + 360) % 360 / 45f + 0.5f).toInt() % 8]
+        trip.text = CarLogic.tripText(tripMeters)
     }
 
     // ---------------------------------------------------------------- Música
@@ -402,7 +395,7 @@ class MainActivity : Activity(), LocationListener {
         if (st.state == PlaybackState.STATE_PLAYING && st.lastPositionUpdateTime > 0) {
             pos += ((android.os.SystemClock.elapsedRealtime() - st.lastPositionUpdateTime) * st.playbackSpeed).toLong()
         }
-        progress.progress = ((pos.coerceIn(0, dur) * 1000) / dur).toInt()
+        progress.progress = CarLogic.progressPermille(pos, dur)
     }
 
     private fun appLabel(pkg: String): String = try {
