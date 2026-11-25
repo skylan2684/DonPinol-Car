@@ -2,110 +2,118 @@ package com.donpinol.car
 
 import android.animation.ValueAnimator
 import android.content.Context
-import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.View
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 
-/** Velocímetro de arco (270°) con brillo azul. Escala 0–200 km/h. */
+/** Futuristic native gauge. The number is real GPS speed; only the arc is limited to its scale. */
 class GaugeView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : View(context, attrs) {
-
-    private val maxValue = 200f
-    private val sweepTotal = 270f
-    private val startAngle = 135f
-
+    private val start = 160f
+    private val sweep = 220f
+    private val maxSpeed = 200f
     private var shown = 0f
+    private var target = 0f
     private var animator: ValueAnimator? = null
-
-    private val d = resources.displayMetrics.density
-    private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
-        color = Color.argb(26, 255, 255, 255); strokeWidth = 12 * d
-    }
-    private val glow = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
-        color = Color.parseColor("#1E9BFF"); strokeWidth = 14 * d
-        maskFilter = BlurMaskFilter(8 * d, BlurMaskFilter.Blur.NORMAL)
-    }
-    private val arc = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND
-        color = Color.parseColor("#3BB0FF"); strokeWidth = 9 * d
-    }
-    private val labels = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#8FA0BA"); textSize = 11 * d
-        textAlign = Paint.Align.CENTER
-    }
-    private val numPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#EAF0FA"); textAlign = Paint.Align.CENTER
-        typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
-        setShadowLayer(14 * d, 0f, 0f, Color.parseColor("#8C00AAFF"))
-    }
-    private val unitPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#8FA0BA"); textAlign = Paint.Align.CENTER; letterSpacing = 0.25f
-    }
+    private val p = Paint(Paint.ANTI_ALIAS_FLAG)
     private val rect = RectF()
-
-    /** true cuando no hay señal GPS: muestra "--". */
-    var noSignal = true
-        set(v) { field = v; invalidate() }
-
-    init {
-        setLayerType(LAYER_TYPE_SOFTWARE, null) // necesario para BlurMaskFilter
+    private val digits = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#F3F8FF")
+        textAlign = Paint.Align.CENTER
+        typeface = Typeface.create("sans-serif-black", Typeface.BOLD_ITALIC)
     }
+    private val label = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#91B8D0")
+        textAlign = Paint.Align.CENTER
+        typeface = Typeface.create("sans-serif-medium", Typeface.ITALIC)
+    }
+
+    var noSignal = true
+        set(value) {
+            field = value
+            contentDescription = if (value) "Velocidad GPS no disponible" else "Velocidad GPS"
+            invalidate()
+        }
 
     fun setSpeed(kmh: Float) {
-        val target = kmh.coerceIn(0f, maxValue)
+        val next = if (kmh.isFinite()) kmh.coerceAtLeast(0f) else 0f
+        if (next == target) return
+        target = next
         animator?.cancel()
-        animator = ValueAnimator.ofFloat(shown, target).apply {
-            duration = 600
-            addUpdateListener { shown = it.animatedValue as Float; invalidate() }
+        animator = ValueAnimator.ofFloat(shown, next).apply {
+            duration = 350
+            addUpdateListener {
+                shown = it.animatedValue as Float
+                invalidate()
+            }
             start()
         }
     }
 
-    override fun onDraw(canvas: Canvas) {
-        val size = min(width, height).toFloat()
-        val pad = 10 * d
-        val r = size / 2f - pad
-        val cx = width / 2f
-        val cy = height / 2f + size * 0.05f
-        track.strokeWidth = r * 0.10f
-        glow.strokeWidth = r * 0.12f
-        arc.strokeWidth = r * 0.075f
-        rect.set(cx - r, cy - r, cx + r, cy + r)
+    override fun onDetachedFromWindow() {
+        animator?.cancel()
+        animator = null
+        shown = target
+        super.onDetachedFromWindow()
+    }
 
-        canvas.drawArc(rect, startAngle, sweepTotal, false, track)
-        val sweep = sweepTotal * (shown / maxValue)
-        if (sweep > 0.5f) {
-            canvas.drawArc(rect, startAngle, sweep, false, glow)
-            canvas.drawArc(rect, startAngle, sweep, false, arc)
-        }
-        // Marcas de escala: solo si hay espacio suficiente
-        if (r > 90 * d) {
-            val lr = r - r * 0.24f
-            labels.textSize = r * 0.09f
-            var v = 0
-            while (v <= maxValue.toInt()) {
-                val ang = Math.toRadians((startAngle + sweepTotal * v / maxValue).toDouble())
-                val x = cx + lr * cos(ang).toFloat()
-                val y = cy + lr * sin(ang).toFloat() + labels.textSize / 3f
-                canvas.drawText(v.toString(), x, y, labels)
-                v += 40
+    private fun stroke(color: String, width: Float) {
+        p.style = Paint.Style.STROKE
+        p.color = Color.parseColor(color)
+        p.strokeWidth = width
+        p.strokeCap = Paint.Cap.BUTT
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        val w = width.toFloat()
+        val h = height.toFloat()
+        val r = min(w * .45f, h * .59f)
+        if (r <= 2f) return
+        val cx = w * .5f
+        val cy = h * .65f
+        rect.set(cx-r, cy-r, cx+r, cy+r)
+        stroke("#0C3E59", r*.034f)
+        canvas.drawArc(rect, start-6f, sweep+12f, false, p)
+        rect.inset(r*.075f, r*.075f)
+        stroke("#183446", r*.085f)
+        canvas.drawArc(rect, start, sweep, false, p)
+        stroke("#805826", r*.085f)
+        canvas.drawArc(rect, start+sweep*.82f, sweep*.18f, false, p)
+
+        val amount = if (noSignal) 0f else (shown/maxSpeed).coerceIn(0f,1f)
+        if (amount > 0f) {
+            val active = sweep*amount
+            stroke("#164E71", r*.14f)
+            canvas.drawArc(rect, start, active, false, p)
+            stroke("#00D5FF", r*.09f)
+            canvas.drawArc(rect, start, min(active,sweep*.82f), false, p)
+            if (active>sweep*.82f) {
+                stroke("#FF9B32", r*.09f)
+                canvas.drawArc(rect,start+sweep*.82f,active-sweep*.82f,false,p)
             }
         }
-        // Número de velocidad y unidad, escalados al tamaño del velocímetro
-        numPaint.textSize = r * 0.62f
-        unitPaint.textSize = r * 0.14f
-        val txt = if (noSignal) "--" else Math.round(shown).toString()
-        canvas.drawText(txt, cx, cy + numPaint.textSize * 0.30f, numPaint)
-        canvas.drawText("KM/H", cx, cy + numPaint.textSize * 0.30f + unitPaint.textSize * 1.6f, unitPaint)
+
+        for (i in 0..20) {
+            val a = Math.toRadians((start+sweep*i/20f).toDouble())
+            val x = cos(a).toFloat()
+            val y = sin(a).toFloat()
+            val inner = if(i%5==0) r*.73f else r*.82f
+            stroke(if(i>=17) "#BF8645" else if(i/20f<=amount && !noSignal) "#C2F8FF" else "#28556D", if(i%5==0) r*.013f else r*.007f)
+            canvas.drawLine(cx+x*inner,cy+y*inner,cx+x*r*.88f,cy+y*r*.88f,p)
+        }
+        digits.textSize = r*.71f
+        val number = if(noSignal) "--" else Math.round(target).toString()
+        canvas.drawText(number,cx,cy-r*.035f,digits)
+        label.textSize = r*.18f
+        canvas.drawText("km/h",cx,cy+r*.22f,label)
     }
 }
