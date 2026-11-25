@@ -89,7 +89,9 @@ class MainActivity : Activity(), LocationListener {
         btnPlay = findViewById(R.id.btnPlay)
 
         val logo = SpannableString("DONPINOL CAR")
-        logo.setSpan(ForegroundColorSpan(getColor(R.color.orange)), 9, 12, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        @Suppress("DEPRECATION")
+        val orange = resources.getColor(R.color.orange)
+        logo.setSpan(ForegroundColorSpan(orange), 9, 12, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         findViewById<TextView>(R.id.logo).text = logo
 
         setupButtons()
@@ -222,10 +224,17 @@ class MainActivity : Activity(), LocationListener {
         date.text = s.replaceFirstChar { it.uppercase() }
     }
 
+    @Suppress("DEPRECATION")
+    private fun legacyOnline(cm: ConnectivityManager?): Boolean = cm?.activeNetworkInfo?.isConnected == true
+
     private fun updateStatusIcons() {
-        val cm = getSystemService(ConnectivityManager::class.java)
-        val caps = cm?.getNetworkCapabilities(cm.activeNetwork)
-        val online = caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+        val online = if (Build.VERSION.SDK_INT >= 23) {
+            val caps = cm?.getNetworkCapabilities(cm.activeNetwork)
+            caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+        } else {
+            legacyOnline(cm)
+        }
         wifi.alpha = if (online) 1f else 0.25f
 
         val btOn = try {
@@ -239,11 +248,13 @@ class MainActivity : Activity(), LocationListener {
     // ---------------------------------------------------------------- GPS
 
     private fun startGps() {
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        // Antes de Android 6 el permiso se concede al instalar; después se pide aquí.
+        if (Build.VERSION.SDK_INT >= 23 &&
+            checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), REQ_LOC)
             return
         }
-        val lm = getSystemService(LocationManager::class.java) ?: return
+        val lm = getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return
         locationManager = lm
         try {
             if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
@@ -325,7 +336,7 @@ class MainActivity : Activity(), LocationListener {
             return
         }
         try {
-            val sm = getSystemService(MediaSessionManager::class.java) ?: return
+            val sm = getSystemService(Context.MEDIA_SESSION_SERVICE) as? MediaSessionManager ?: return
             sessionManager = sm
             sm.addOnActiveSessionsChangedListener(sessionsListener, listenerComponent)
             pickController(sm.getActiveSessions(listenerComponent))
