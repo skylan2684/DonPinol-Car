@@ -34,7 +34,10 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            // Con UNSIGNED=1 (flujo de firma DonPinol) la APK sale sin firmar.
+            if (System.getenv("UNSIGNED") == null) {
+                signingConfig = signingConfigs.getByName("debug")
+            }
         }
     }
 
