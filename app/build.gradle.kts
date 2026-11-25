@@ -11,8 +11,8 @@ android {
         applicationId = "com.donpinol.car"
         minSdk = 26
         targetSdk = 34
-        versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
-        versionName = "1.0." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
+        versionCode = (System.getenv("DP_VERSION") ?: System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
+        versionName = "1.0." + (System.getenv("DP_VERSION") ?: System.getenv("GITHUB_RUN_NUMBER") ?: "0")
     }
 
     buildFeatures {
